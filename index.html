@@ -133,7 +133,7 @@
         // Create placeTemplate
         const pn = joint.shapes.pn;
         placeTemplate = new pn.Place({
-            position: { x: 10, y: 30 },
+            position: { x: 100, y: 200 },
             attrs: {
                 '.label': {
                     'text': 'ready',
@@ -150,7 +150,7 @@
 
         // Create transitionTemplate
         transitionTemplate = new pn.Transition({
-            position: { x: 20, y: 100 },
+            position: { x: 250, y: 300 },
             attrs: {
                 '.label': {
                     'text': 'produce',
@@ -162,66 +162,53 @@
                 }
             }
         });
-        // begin example Petrinet plugin
-        var pReady = new pn.Place({
-            position: { x: 100, y: 300 },
-            attrs: {
-                '.label': {
-                    'text': 'description1',
-                    'fill': '#7c68fc' },
-                '.root': {
-                    'stroke': '#9586fd',
-                    'stroke-width': 3
-                },
-                '.tokens > circle': {
-                    'fill': '#7a7e9b'
-                }
-            },
-        });
-        var pProduce = new pn.Transition({
-            position: { x: 50, y: 250 },
-            attrs: {
-                '.label': {
-                    'text': 'description2',
-                    'fill': '#fe854f'
-                },
-                '.root': {
-                    'fill': '#9586fd',
-                    'stroke': '#9586fd'
-                }
-            }
-        });
+
+        // Begin example Petrinet plugin
+        var pReady = placeTemplate.clone();
+        var pProduce = transitionTemplate.clone();
+        var pBla = placeTemplate.clone().position(300, 200);
         // add elements
-        graph.addCell([pReady, pProduce]);
+        graph.addCell([pReady, pProduce, pBla]);
         // add links
+        // graph.addCell(createLink(pReady, pProduce));
+        // End example Petrinet plugin
+        paper.on({
 
-        // Beispiel aus JJS tutorial
-        var rect = new joint.shapes.standard.Rectangle();
-        rect.position(100, 30);
-        rect.resize(100, 40);
-        rect.attr({
-            body: {
-                fill: 'blue'
+            'element:pointerdown': function(elementView, evt) {
+
+                evt.data = elementView.model.position(); // If position() is called without arguments, it returns the current position // can share information through the evt.data object
             },
-            label: {
-                text: 'Hello',
-                fill: 'white'
+
+            'element:pointerup': function(elementView, evt, x, y) {
+
+                var coordinates = new g.Point(x, y);
+                var elementAbove = elementView.model;
+                var elementBelow = graph.findModelsFromPoint(coordinates).find(function(el) {
+                    return (el.id !== elementAbove.id);
+                });
+
+                // If the two elements are connected already, don't
+                // connect them again (this is application-specific though).
+                if (elementBelow && graph.getNeighbors(elementBelow).indexOf(elementAbove) === -1) {
+
+                    // Move the element to the position before dragging.
+                    elementAbove.position(evt.data.x, evt.data.y);
+
+                    // Create a connection between elements.
+                    var link = new joint.shapes.standard.Link();
+                    link.source(elementAbove);
+                    link.target(elementBelow);
+                    link.addTo(graph);
+
+                    // Add remove button to the link.
+                    var tools = new joint.dia.ToolsView({
+                        tools: [new joint.linkTools.Remove()]
+                    });
+                    link.findView(this).addTools(tools);
+                }
             }
         });
-        rect.addTo(graph);
-
-        var rect2 = rect.clone();
-        rect2.translate(300, 0);
-        rect2.attr('label/text', 'World!');
-        rect2.addTo(graph);
-
-        var link = new joint.shapes.standard.Link();
-        link.source(rect);
-        link.target(rect2);
-        link.addTo(graph);
-        // Ende Beispiel
-
-        // functions
+        // Functions
         // Create Link between Elements
         function createLink(a, b) {
             const pn = joint.shapes.pn;
