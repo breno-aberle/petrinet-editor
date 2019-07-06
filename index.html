@@ -1,6 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8"> <!-- Specifies the character encoding for the HTML document -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"> <!-- website adjusts to the device display -->
+    <!-- Integration of css stylesheet -->
+    <link rel="stylesheet" type="text/css" href="style.css">
+
+    <title>Petrinetz-Editor</title>
     <!-- dependencies JointJS -->
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/jointjs/3.0.2/joint.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
@@ -8,29 +15,187 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.4.0/backbone-min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jointjs/3.0.2/joint.min.js"></script>
     <!-- dependencies Bootstrap -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.15.0/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 </head>
 <body>
-    <!-- content -->
-    <div id="myholder"></div>
-
-
-
-    <!-- code -->
-    <script type="text/javascript">
-
+    <!-- Menu bar -->
+    <div class="btn-group">
+        <!-- File -->
+        <div class="btn-group">
+            <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">File</button>
+            <div class="dropdown-menu">
+                <a class="dropdown-item" href="#">New File</a>
+                <a class="dropdown-item" href="#">Open File</a>
+                <a class="dropdown-item" href="#">Save as</a>
+                <a class="dropdown-item" href="#">Close</a>
+            </div>
+        </div>
+        <!-- Edit -->
+        <div class="btn-group">
+            <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">Edit</button>
+            <div class="dropdown-menu">
+                <a class="dropdown-item" href="#">Undo</a>
+                <a class="dropdown-item" href="#">Redo</a>
+            </div>
+        </div>
+        <!-- View -->
+        <div class="btn-group">
+            <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">View</button>
+            <div class="dropdown-menu">
+                <a class="dropdown-item" href="#">Default view</a>
+                <a class="dropdown-item" href="#">Increase Height</a>
+                <a class="dropdown-item" href="#">Decrease Height</a>
+                <a class="dropdown-item" href="#">Increase Width</a>
+                <a class="dropdown-item" href="#">Decrease Width</a>
+            </div>
+        </div>
+        <!-- About -->
+        <div class="btn-group">
+            <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">About</button>
+            <div class="dropdown-menu">
+                <a class="dropdown-item" href="#">Instructions</a>
+                <a class="dropdown-item" href="#">About AIFB</a>
+            </div>
+        </div>
+    </div>
+    <!-- Elements/selection bar -->
+    <div class="btn-group">
+        <button type="button" class="btn btn-primary" onclick="defaultMode()">Select</button>
+        <button type="button" class="btn btn-primary" onclick="removeMode()">Delete</button>
+        <button type="button" class="btn btn-primary" onclick="editLabelMode()">Label</button>
+        <button type="button" class="btn btn-primary" onclick="newPlaceMode()">Place</button>
+        <button type="button" class="btn btn-primary" onclick="newTransitionMode()">Transition</button>
+        <button type="button" class="btn btn-primary" onclick="newLinkMode()">Link</button>
+        <button type="button" class="btn btn-primary" onclick="">Polygon</button>
+        <button type="button" class="btn btn-primary" onclick="">Link2</button>
+    </div>
+    <!-- Editor Screen-->
+    <div id="screen">
+        <p>EditorScreen</p>
+        <p>Mode: <span id="show_editormode"></span></p>
+        <p>Message: <span id="show_message"></span></p>
+        <div id="myholder"></div> <!-- Shows the EditorScreen -->
+    </div>
+    <!-- Bootstrap Modal -->
+    <!-- Button trigger modal -->
+    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModal">
+      Launch demo modal
+    </button>
+    <!-- Modal -->
+    <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">Enter label</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"> <!-- Kreuz rechts oben -->
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+              <label for="new_label">New description:</label>
+              <input type="text" class="form-control" id="new_label">
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary">Save changes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Java Script code -->
+    <script>
+        // Variables
         var graph = new joint.dia.Graph;
-
         var paper = new joint.dia.Paper({
             el: document.getElementById('myholder'),
             model: graph,
-            width: 600,
-            height: 100,
-            gridSize: 1
+            width: 800,
+            height: 400,
+            gridSize: 1,
+            drawGrid: true,
+            background: {
+                color: 'rgba(0, 255, 0, 0.3)'
+            },
+            defaultAnchor: { name: 'perpendicular' }, // Link trifft senkrecht auf Objekt ein
+            defaultConnectionPoint: { name: 'boundary' }, // Verbindungspunkt an der tatsächlichen Formgrenze
+            // linkPinning: false, // You can connect links only with elemnts. Links can't start or end on a blank/arbitrary spot on the paper
+        });
+        var editorMode = "editLabel";
+        document.getElementById("show_editormode").innerHTML = editorMode;
+        var message = "nochNichts";
+        document.getElementById("show_message").innerHTML = message;
+        var placeTemplate;
+        var transitionTemplate;
+        var labelText = "startLabelDescription";
+
+        // Create placeTemplate
+        const pn = joint.shapes.pn;
+        placeTemplate = new pn.Place({
+            position: { x: 10, y: 30 },
+            attrs: {
+                '.label': {
+                    'text': 'ready',
+                    'fill': '#7c68fc' },
+                '.root': {
+                    'stroke': '#9586fd',
+                    'stroke-width': 3
+                },
+                '.tokens > circle': {
+                    'fill': '#7a7e9b'
+                }
+            },
         });
 
+        // Create transitionTemplate
+        transitionTemplate = new pn.Transition({
+            position: { x: 20, y: 100 },
+            attrs: {
+                '.label': {
+                    'text': 'produce',
+                    'fill': '#fe854f'
+                },
+                '.root': {
+                    'fill': '#9586fd',
+                    'stroke': '#9586fd'
+                }
+            }
+        });
+        // begin example Petrinet plugin
+        var pReady = new pn.Place({
+            position: { x: 100, y: 300 },
+            attrs: {
+                '.label': {
+                    'text': 'description1',
+                    'fill': '#7c68fc' },
+                '.root': {
+                    'stroke': '#9586fd',
+                    'stroke-width': 3
+                },
+                '.tokens > circle': {
+                    'fill': '#7a7e9b'
+                }
+            },
+        });
+        var pProduce = new pn.Transition({
+            position: { x: 50, y: 250 },
+            attrs: {
+                '.label': {
+                    'text': 'description2',
+                    'fill': '#fe854f'
+                },
+                '.root': {
+                    'fill': '#9586fd',
+                    'stroke': '#9586fd'
+                }
+            }
+        });
+        // add elements
+        graph.addCell([pReady, pProduce]);
+        // add links
+
+        // Beispiel aus JJS tutorial
         var rect = new joint.shapes.standard.Rectangle();
         rect.position(100, 30);
         rect.resize(100, 40);
@@ -54,6 +219,44 @@
         link.source(rect);
         link.target(rect2);
         link.addTo(graph);
+        // Ende Beispiel
+
+        // functions
+        // Create Link between Elements
+        function createLink(a, b) {
+            const pn = joint.shapes.pn;
+            return new pn.Link({
+                source: { id: a.id, selector: '.root' },
+                target: { id: b.id, selector: '.root' },
+                attrs: {
+                    '.connection': {
+                        'fill': 'none',
+                        'stroke-linejoin': 'round',
+                        'stroke-width': '2',
+                        'stroke': '#4b4a67'
+                    }
+                }
+            });
+        };
+        // Different mode functions depended which element in the menu bar was selected
+        function defaultMode() {
+            editorMode="default"
+        };
+        function newPlaceMode() {
+            editorMode="newPlace"
+        };
+        function newTransitionMode() {
+            editorMode="newTransition"
+        };
+        function newLinkMode() {
+            editorMode="newLink"
+        };
+        function editLabelMode() {
+            editorMode="editLabel"
+        };
+        function removeMode() {
+            editorMode="remove"
+        };
 
     </script>
 </body>
